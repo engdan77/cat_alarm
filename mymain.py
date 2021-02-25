@@ -15,7 +15,6 @@ if 'esp' not in sys.platform:
     import io
     import json
     from unittest.mock import Mock
-    print(sys.modules)
     sys.modules['utime'] = time
     sys.modules['micropython'] = Mock()
     sys.modules['ure'] = re
@@ -37,6 +36,7 @@ if 'esp' not in sys.platform:
     time.ticks_diff = Mock()
     time.sleep_ms = lambda x: time.sleep(x / 1000)
     asyncio.sleep_ms = lambda x: asyncio.sleep(x / 1000)
+    sys.print_exception = lambda *x: print(x)
 
 
 
@@ -80,7 +80,7 @@ def start_cat_alarm(config):
     app.add_url_rule('/getconfig', web_getconfig)
 
     gc.collect()
-    app.run(host="0.0.0.0", port=80, log=log)
+    app.run(host="0.0.0.0", port=80, log=log, debug=True)
 
 
 def main():
@@ -104,6 +104,7 @@ def main():
         start_cat_alarm(c)
         del c
         gc.collect()
+
 
 if __name__ == '__main__':
     main()

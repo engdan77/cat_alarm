@@ -37,7 +37,7 @@ class MyCatAlarm:
                     self.mqtt_password)
         print("cat alarm")
 
-    async def check_motions(self, sleep_ms=500, button_time_secs=1):
+    async def check_motions(self, sleep_ms=500, button_time_secs=1, idle_time=8000):
         while True:
             await asyncio.sleep_ms(sleep_ms)
             if any([self.button.active, any([p.active for p in self.pirs])]):
@@ -55,6 +55,8 @@ class MyCatAlarm:
                             message,
                             self.mqtt_username,
                             self.mqtt_password)
+                print('pausing until can be triggered again')
+                await asyncio.sleep_ms(idle_time)
             if self.wdt:
                 self.wdt.feed()
 
@@ -63,4 +65,5 @@ class MyCatAlarm:
         print("honk started")
         await asyncio.sleep_ms(honk_time)
         print("honk stopped")
+        self.relay.value(False)
 
