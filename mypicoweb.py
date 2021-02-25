@@ -19,7 +19,11 @@ class MyPicoWeb(picoweb.WebApp):
             if request_line == b"":
                 if self.debug >= 0:
                     self.log.error("%s: EOF on request start" % reader)
-                yield from writer.aclose()
+                try:
+                    yield from writer.aclose()
+                except Exception:
+                    yield from writer.close()
+
                 return
             req = HTTPRequest()
             request_line = request_line.decode()
@@ -98,7 +102,11 @@ class MyPicoWeb(picoweb.WebApp):
             yield from self.handle_exc(req, writer, e)
 
         if close is not False:
-            yield from writer.aclose()
+            try:
+                yield from writer.aclose()
+            except Exception:
+                yield from writer.close()
+
         if __debug__ and self.debug > 1:
             self.log.debug("%.3f %s Finished processing request", utime.time(), req)
 
