@@ -1,7 +1,27 @@
 import utime
-
 import picoweb
 from picoweb import HTTPRequest, start_response
+import sys
+
+
+async def w(writer_obj, data):
+    """Special handler to support StreamWriter on ESP or other"""
+    print("writing: {}".format(data))
+    import sys
+    if 'esp' not in sys.platform:
+        writer_obj.write(data.encode())
+        await writer_obj.drain()
+    else:
+        writer_obj.awrite(data)
+
+
+async def c(writer_obj):
+    """Special handler to support closing on ESP or other"""
+    import sys
+    if 'esp' not in sys.platform:
+        writer_obj.close()
+    else:
+        writer_obj.aclose()
 
 
 class MyPicoWeb(picoweb.WebApp):
@@ -9,21 +29,19 @@ class MyPicoWeb(picoweb.WebApp):
         self.kwargs = kwargs
         super().__init__(pkg, routes, serve_static)
 
-    def _handle(self, reader, writer):
+    async def _handle(self, reader, writer):
+        if 'esp' not in sys.platform:
+            writer.aclose = writer.close
         if self.debug > 1:
             micropython.mem_info()
         close = True
         req = None
         try:
-            request_line = yield from reader.readline()
+            request_line = await reader.readline()
             if request_line == b"":
                 if self.debug >= 0:
                     self.log.error("%s: EOF on request start" % reader)
-                try:
-                    yield from writer.aclose()
-                except Exception:
-                    yield from writer.close()
-
+                await writer.aclose()
                 return
             req = HTTPRequest()
             request_line = request_line.decode()
@@ -77,11 +95,11 @@ class MyPicoWeb(picoweb.WebApp):
 
             if headers_mode == "skip":
                 while True:
-                    l = yield from reader.readline()
+                    l = await reader.readline()
                     if l == b"\r\n":
                         break
             elif headers_mode == "parse":
-                req.headers = yield from self.parse_headers(reader)
+                req.headers = await self.parse_headers(reader)
             else:
                 assert headers_mode == "leave"
 
@@ -92,20 +110,17 @@ class MyPicoWeb(picoweb.WebApp):
                 req.reader = reader
                 # My customization to pass temp object
                 print('running handler with kwargs {}'.format(self.kwargs))
-                close = yield from handler(req, writer, **self.kwargs)
+                close = await handler(req, writer, **self.kwargs)
             else:
-                yield from start_response(writer, status="404")
-                yield from writer.awrite("404\r\n")
+                await start_response(writer, status="404")
+                await w(writer, "404\r\n")
         except Exception as e:
             if self.debug >= 0:
                 self.log.exc(e, "%.3f %s %s %r" % (utime.time(), req, writer, e))
-            yield from self.handle_exc(req, writer, e)
+            self.handle_exc(req, writer, e)
 
         if close is not False:
-            try:
-                yield from writer.aclose()
-            except Exception:
-                yield from writer.close()
+            await c(writer)
 
         if __debug__ and self.debug > 1:
             self.log.debug("%.3f %s Finished processing request", utime.time(), req)

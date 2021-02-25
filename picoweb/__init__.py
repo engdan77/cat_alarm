@@ -13,6 +13,19 @@ from .utils import parse_qs
 
 SEND_BUFSZ = 128
 
+async def w(writer_obj, *data):
+    """Special handler to support StreamWriter on ESP or other"""
+    print("writing: {}".format(data))
+    import sys
+    if 'esp' not in sys.platform:
+        if not len(data):
+            writer_obj.write(data.encode())
+        else:
+            writer_obj.write(*data)
+        await writer_obj.drain()
+    else:
+        writer_obj.awrite(*data)
+
 
 def get_mime_type(fname):
     # Provide minimal detection of important file
@@ -25,41 +38,59 @@ def get_mime_type(fname):
         return "image"
     return "text/plain"
 
-def sendstream(writer, f):
+
+async def sendstream(writer, f):
     buf = bytearray(SEND_BUFSZ)
     while True:
         l = f.readinto(buf)
         if not l:
             break
-        yield from writer.awrite(buf, 0, l)
+        await w(writer, buf, 0, l)
 
 
-def jsonify(writer, dict):
+async def jsonify(writer, dict):
     import ujson
-    yield from start_response(writer, "application/json")
-    yield from writer.awrite(ujson.dumps(dict))
+    import sys
+    if 'esp' not in sys.platform:
+        writer.awrite = writer.write
+    await start_response(writer, "application/json")
+    await w(writer, ujson.dumps(dict))
 
-def start_response(writer, content_type="text/html; charset=utf-8", status="200", headers=None):
-    yield from writer.awrite("HTTP/1.0 %s NA\r\n" % status)
-    yield from writer.awrite("Content-Type: ")
-    yield from writer.awrite(content_type)
+
+async def w(writer_obj, data):
+    """Special handler to support StreamWriter on ESP or other"""
+    print("writing: {}".format(data))
+    import sys
+    if 'esp' not in sys.platform:
+        writer_obj.write(data.encode())
+        await writer_obj.drain()
+    else:
+        writer_obj.awrite(data)
+
+
+async def start_response(writer, content_type="text/html; charset=utf-8", status="200", headers=None):
+    print('writing headers')
+    await w(writer, "HTTP/1.0 %s NA\r\n" % status)
+    await w(writer, "Content-Type: ")
+    await w(writer, content_type)
     if not headers:
-        yield from writer.awrite("\r\n\r\n")
+        await w(writer, "\r\n\r\n")
         return
-    yield from writer.awrite("\r\n")
+    await w(writer, "\r\n")
     if isinstance(headers, bytes) or isinstance(headers, str):
-        yield from writer.awrite(headers)
+        await w(writer, headers)
     else:
         for k, v in headers.items():
-            yield from writer.awrite(k)
-            yield from writer.awrite(": ")
-            yield from writer.awrite(v)
-            yield from writer.awrite("\r\n")
-    yield from writer.awrite("\r\n")
+            await w(writer, k)
+            await w(writer, ": ")
+            await w(writer, v)
+            await w(writer, "\r\n")
+    await w(writer, "\r\n")
 
-def http_error(writer, status):
-    yield from start_response(writer, status=status)
-    yield from writer.awrite(status)
+
+async def http_error(writer, status):
+    await start_response(writer, status=status)
+    await w(writer,status)
 
 
 class HTTPRequest:
@@ -67,9 +98,9 @@ class HTTPRequest:
     def __init__(self):
         pass
 
-    def read_form_data(self):
+    async def read_form_data(self):
         size = int(self.headers[b"Content-Length"])
-        data = yield from self.reader.readexactly(size)
+        data = await self.reader.readexactly(size)
         form = parse_qs(data.decode())
         self.form = form
 
@@ -97,28 +128,28 @@ class WebApp:
         self.template_loader = None
         self.headers_mode = "parse"
 
-    def parse_headers(self, reader):
+    async def parse_headers(self, reader):
         headers = {}
         while True:
-            l = yield from reader.readline()
+            l = await reader.readline()
             if l == b"\r\n":
                 break
             k, v = l.split(b":", 1)
             headers[k] = v.strip()
         return headers
 
-    def _handle(self, reader, writer):
+    async def _handle(self, reader, writer):
         if self.debug > 1:
             micropython.mem_info()
 
         close = True
         req = None
         try:
-            request_line = yield from reader.readline()
+            request_line = await reader.readline()
             if request_line == b"":
                 if self.debug >= 0:
                     self.log.error("%s: EOF on request start" % reader)
-                yield from writer.aclose()
+                await writer.aclose()
                 return
             req = HTTPRequest()
             # TODO: bytes vs str
@@ -188,11 +219,11 @@ class WebApp:
 
             if headers_mode == "skip":
                 while True:
-                    l = yield from reader.readline()
+                    l = await reader.readline()
                     if l == b"\r\n":
                         break
             elif headers_mode == "parse":
-                req.headers = yield from self.parse_headers(reader)
+                req.headers = await self.parse_headers(reader)
             else:
                 assert headers_mode == "leave"
 
@@ -201,17 +232,17 @@ class WebApp:
                 req.path = path
                 req.qs = qs
                 req.reader = reader
-                close = yield from handler(req, writer)
+                close = await handler(req, writer)
             else:
-                yield from start_response(writer, status="404")
-                yield from writer.awrite("404\r\n")
+                await start_response(writer, status="404")
+                await w(writer, "404\r\n")
         except Exception as e:
             if self.debug >= 0:
                 self.log.exc(e, "%.3f %s %s %r" % (utime.time(), req, writer, e))
-            yield from self.handle_exc(req, writer, e)
+            await self.handle_exc(req, writer, e)
 
         if close is not False:
-            yield from writer.aclose()
+            await writer.aclose()
         if __debug__ and self.debug > 1:
             self.log.debug("%.3f %s Finished processing request", utime.time(), req)
 
@@ -255,36 +286,36 @@ class WebApp:
             self.template_loader = utemplate.source.Loader(self.pkg, "templates")
         return self.template_loader.load(tmpl_name)
 
-    def render_template(self, writer, tmpl_name, args=()):
+    async def render_template(self, writer, tmpl_name, args=()):
         tmpl = self._load_template(tmpl_name)
         for s in tmpl(*args):
-            yield from writer.awritestr(s)
+            await writer.awritestr(s)
 
     def render_str(self, tmpl_name, args=()):
         #TODO: bloat
         tmpl = self._load_template(tmpl_name)
         return ''.join(tmpl(*args))
 
-    def sendfile(self, writer, fname, content_type=None, headers=None):
+    async def sendfile(self, writer, fname, content_type=None, headers=None):
         if not content_type:
             content_type = get_mime_type(fname)
         try:
             with pkg_resources.resource_stream(self.pkg, fname) as f:
-                yield from start_response(writer, content_type, "200", headers)
-                yield from sendstream(writer, f)
+                await start_response(writer, content_type, "200", headers)
+                await sendstream(writer, f)
         except OSError as e:
             if e.args[0] == uerrno.ENOENT:
-                yield from http_error(writer, "404")
+                await http_error(writer, "404")
             else:
                 raise
 
-    def handle_static(self, req, resp):
+    async def handle_static(self, req, resp):
         path = req.url_match.group(1)
         print(path)
         if ".." in path:
-            yield from http_error(resp, "403")
+            await http_error(resp, "403")
             return
-        yield from self.sendfile(resp, path)
+        await self.sendfile(resp, path)
 
     def init(self):
         """Initialize a web application. This is for overriding by subclasses.
