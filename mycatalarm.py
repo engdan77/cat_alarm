@@ -1,5 +1,8 @@
 import utime
-from machine import Pin
+try:
+    from machine import Pin
+except ImportError:
+    from mymocks import *
 import uasyncio as asyncio
 from mymqtt import publish
 
@@ -16,7 +19,7 @@ class MyCatAlarm:
         self.wdt = wdt
         self.relay = Pin(relay_pin, Pin.OUT)
         self.led = Pin(led_pin, Pin.OUT)
-        self.led(True)
+        self.led.value(True)
         self.button = button
         self.pirs = pirs
         self.state = False

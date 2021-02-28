@@ -1,4 +1,7 @@
-import network
+try:
+    import network
+except ImportError:
+    from mymocks import *
 import utime
 
 

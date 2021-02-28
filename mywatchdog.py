@@ -1,6 +1,11 @@
 import gc
 from sys import platform
 
+try:
+    from machine import Timer
+except ImportError:
+    from mymocks import *
+
 import machine
 
 gc.collect()
@@ -10,7 +15,7 @@ class WDT:
     def __init__(self, _id=0, timeout=120, use_rtc_memory=True):
         self._timeout = timeout / 10
         self._counter = 0
-        self._timer = machine.Timer(_id)
+        self._timer = Timer(_id)
         self._use_rtc_memory = use_rtc_memory
         self.init()
         try:
@@ -49,7 +54,7 @@ class WDT:
     def init(self, timeout=None):
         timeout = timeout or self._timeout
         self._timeout = timeout
-        self._timer.init(period=int(self._timeout * 1000), mode=machine.Timer.PERIODIC, callback=self._wdt)
+        self._timer.init(period=int(self._timeout * 1000), mode=Timer.PERIODIC, callback=self._wdt)
 
     def deinit(self):  # will not stop coroutine
         self._timer.deinit()

@@ -5,7 +5,8 @@ __version__ = "0.0.1"
 __email__ = "daniel@engvalls.eu"
 
 import sys
-if 'esp' not in sys.platform:
+if 'esp' not in sys.platform and sys.implementation.name is not 'micropython':
+    mocked_python = None
     import time
     import re
     import errno
@@ -23,7 +24,6 @@ if 'esp' not in sys.platform:
     sys.modules['usocket'] = socket
     sys.modules['uasyncio'] = asyncio
     sys.modules['uio'] = io
-    sys.modules['uio'] = io
     sys.modules['machine'] = Mock()
     sys.modules['ucollections'] = Mock()
     sys.modules['ujson'] = json
@@ -37,6 +37,8 @@ if 'esp' not in sys.platform:
     time.sleep_ms = lambda x: time.sleep(x / 1000)
     asyncio.sleep_ms = lambda x: asyncio.sleep(x / 1000)
     sys.print_exception = lambda *x: print(x)
+if sys.platform is 'darwin' and sys.implementation.name is 'micropython':
+    darwin_micropython = None
 
 
 
@@ -51,7 +53,10 @@ from myled import blink_int
 from mywifi import stop_all_wifi, start_ap, wifi_connect
 from webresources import web_save, web_status, web_getconfig
 from mycatalarm import MyCatAlarm
-import webrepl
+try:
+    import webrepl
+except ImportError:
+    from mymocks import *
 
 
 WEBREPL_PASSWORD = 'cat'
@@ -84,8 +89,9 @@ def start_cat_alarm(config):
 
 
 def main():
-    # check initially how many click
-    clicks = blocking_count_clicks(timeout=5)
+    print('start')
+    # clicks = blocking_count_clicks(timeout=5)
+    clicks = 0
     if clicks == 1:
         print('reset configuration')
         blink_int(on_time=1000)

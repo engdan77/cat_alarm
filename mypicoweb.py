@@ -6,22 +6,28 @@ import sys
 
 async def w(writer_obj, data):
     """Special handler to support StreamWriter on ESP or other"""
-    print("writing: {}".format(data))
+    print("writing new: {}".format(data))
     import sys
     if 'esp' not in sys.platform:
         writer_obj.write(data.encode())
         await writer_obj.drain()
     else:
-        writer_obj.awrite(data)
+        print('write esp')
+        writer_obj.write(data)
+        await writer_obj.drain()
+        # writer_obj.awrite(data)
 
 
 async def c(writer_obj):
     """Special handler to support closing on ESP or other"""
     import sys
+    print('closing socket')
     if 'esp' not in sys.platform:
         writer_obj.close()
     else:
-        writer_obj.aclose()
+        print('esp close')
+        writer_obj.close()
+        # writer_obj.aclose()
 
 
 class MyPicoWeb(picoweb.WebApp):

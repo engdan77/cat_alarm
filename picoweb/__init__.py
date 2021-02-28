@@ -15,7 +15,7 @@ SEND_BUFSZ = 128
 
 async def w(writer_obj, *data):
     """Special handler to support StreamWriter on ESP or other"""
-    print("writing: {}".format(data))
+    print("writing new: {}".format(data))
     import sys
     if 'esp' not in sys.platform:
         if not len(data):
@@ -24,7 +24,9 @@ async def w(writer_obj, *data):
             writer_obj.write(*data)
         await writer_obj.drain()
     else:
-        writer_obj.awrite(*data)
+        writer_obj.write(*data)
+        # writer_obj.awrite(*data)
+        await writer_obj.drain()
 
 
 def get_mime_type(fname):

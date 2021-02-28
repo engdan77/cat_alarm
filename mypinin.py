@@ -1,4 +1,7 @@
-from machine import Pin
+try:
+    from machine import Pin
+except ImportError:
+    from mymocks import *
 from ucollections import deque
 import uasyncio as asyncio
 import utime
@@ -35,6 +38,7 @@ def blocking_count_clicks(button_pin=14, timeout=5, debounce_ms=5, sleep_ms=10):
     number_iterations = (timeout * 1000) / sleep_ms
     for _ in range(int(number_iterations)):
         p = Pin(button_pin, Pin.IN, Pin.PULL_UP)
+        print(p.value())
         if bool(p.value()) is False:
             being_pressed = []
             for d in range(20):

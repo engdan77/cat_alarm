@@ -41,7 +41,7 @@ COPY umqtt /micropython/ports/esp8266/modules/umqtt
 COPY picoweb /micropython/ports/esp8266/modules/picoweb
 COPY pkg_resources.py /micropython/ports/esp8266/modules/
 COPY urltools.py /micropython/ports/esp8266/modules/
-COPY logging.py /micropython/ports/esp8266/modules/
+COPY mylogging.py /micropython/ports/esp8266/modules/
 
 COPY mywatchdog.py /micropython/ports/esp8266/modules/
 COPY mybutton.py /micropython/ports/esp8266/modules/

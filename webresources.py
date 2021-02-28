@@ -1,6 +1,9 @@
 import gc
 import ujson
-from machine import reset
+try:
+    from machine import reset
+except ImportError:
+    from mymocks import *
 import mypicoweb
 from myconfig import get_config, save_config
 from urltools import query_params_to_dict
@@ -8,13 +11,16 @@ from urltools import query_params_to_dict
 
 async def w(writer_obj, data):
     """Special handler to support StreamWriter on ESP or other"""
-    print("writing: {}".format(data))
+    print("writing new: {}".format(data))
     import sys
     if 'esp' not in sys.platform:
         writer_obj.write(data.encode())
         await writer_obj.drain()
     else:
-        writer_obj.awrite(data)
+        print('write esp')
+        writer_obj.write(data)
+        await writer_obj.drain()
+        # writer_obj.awrite(data)
 
 
 def web_index(req, resp, **kwargs):

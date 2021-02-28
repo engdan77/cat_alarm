@@ -1,4 +1,7 @@
-from machine import Pin
+try:
+    from machine import Pin
+except ImportError:
+    from mymocks import *
 import utime
 
 
