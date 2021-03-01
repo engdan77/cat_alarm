@@ -13,6 +13,7 @@ from .utils import parse_qs
 
 SEND_BUFSZ = 128
 
+
 async def w(writer_obj, *data):
     """Special handler to support StreamWriter on ESP or other"""
     print("writing new: {}".format(data))
@@ -25,8 +26,14 @@ async def w(writer_obj, *data):
         await writer_obj.drain()
     else:
         writer_obj.write(*data)
-        # writer_obj.awrite(*data)
         await writer_obj.drain()
+
+
+async def c(writer_obj):
+    """Special handler to support closing on ESP or other"""
+    print(writer_obj)
+    writer_obj.close()
+    await writer_obj.wait_closed()
 
 
 def get_mime_type(fname):
@@ -151,7 +158,7 @@ class WebApp:
             if request_line == b"":
                 if self.debug >= 0:
                     self.log.error("%s: EOF on request start" % reader)
-                await writer.aclose()
+                await c(writer)
                 return
             req = HTTPRequest()
             # TODO: bytes vs str
@@ -165,17 +172,12 @@ class WebApp:
                 qs = path[1]
             path = path[0]
 
-            #print("================")
-            #print(req, writer)
-            #print(req, (method, path, qs, proto), req.headers)
-
             # Find which mounted subapp (if any) should handle this request
             app = self
             while True:
                 found = False
                 for subapp in app.mounts:
                     root = subapp.url
-                    #print(path, "vs", root)
                     if path[:len(root)] == root:
                         app = subapp
                         found = True
@@ -244,7 +246,7 @@ class WebApp:
             await self.handle_exc(req, writer, e)
 
         if close is not False:
-            await writer.aclose()
+            await c(writer)
         if __debug__ and self.debug > 1:
             self.log.debug("%.3f %s Finished processing request", utime.time(), req)
 
@@ -332,7 +334,7 @@ class WebApp:
         loop.create_task(asyncio.start_server(self._handle, host, port))
         loop.run_forever()
 
-    def run(self, host="127.0.0.1", port=8081, debug=False, lazy_init=False, log=None):
+    def run(self, host="127.0.0.1", port=8081, debug=True, lazy_init=False, log=None):
         if log is None and debug >= 0:
             import ulogging
             log = ulogging.getLogger("picoweb")

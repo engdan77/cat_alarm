@@ -1,7 +1,6 @@
 import utime
 import picoweb
 from picoweb import HTTPRequest, start_response
-import sys
 
 
 async def w(writer_obj, data):
@@ -15,19 +14,13 @@ async def w(writer_obj, data):
         print('write esp')
         writer_obj.write(data)
         await writer_obj.drain()
-        # writer_obj.awrite(data)
 
 
 async def c(writer_obj):
     """Special handler to support closing on ESP or other"""
-    import sys
-    print('closing socket')
-    if 'esp' not in sys.platform:
-        writer_obj.close()
-    else:
-        print('esp close')
-        writer_obj.close()
-        # writer_obj.aclose()
+    print(writer_obj)
+    writer_obj.close()
+    await writer_obj.wait_closed()
 
 
 class MyPicoWeb(picoweb.WebApp):
@@ -36,8 +29,6 @@ class MyPicoWeb(picoweb.WebApp):
         super().__init__(pkg, routes, serve_static)
 
     async def _handle(self, reader, writer):
-        if 'esp' not in sys.platform:
-            writer.aclose = writer.close
         if self.debug > 1:
             micropython.mem_info()
         close = True
@@ -47,7 +38,7 @@ class MyPicoWeb(picoweb.WebApp):
             if request_line == b"":
                 if self.debug >= 0:
                     self.log.error("%s: EOF on request start" % reader)
-                await writer.aclose()
+                await c(writer)
                 return
             req = HTTPRequest()
             request_line = request_line.decode()

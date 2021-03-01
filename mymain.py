@@ -4,44 +4,6 @@ __license__ = "MIT"
 __version__ = "0.0.1"
 __email__ = "daniel@engvalls.eu"
 
-import sys
-if 'esp' not in sys.platform and sys.implementation.name is not 'micropython':
-    mocked_python = None
-    import time
-    import re
-    import errno
-    import select
-    import socket
-    import asyncio
-    import io
-    import json
-    from unittest.mock import Mock
-    sys.modules['utime'] = time
-    sys.modules['micropython'] = Mock()
-    sys.modules['ure'] = re
-    sys.modules['uerrno'] = errno
-    sys.modules['uselect'] = select
-    sys.modules['usocket'] = socket
-    sys.modules['uasyncio'] = asyncio
-    sys.modules['uio'] = io
-    sys.modules['machine'] = Mock()
-    sys.modules['ucollections'] = Mock()
-    sys.modules['ujson'] = json
-    sys.modules['network'] = Mock()
-    sys.modules['webrepl'] = Mock()
-    sys.modules['umqtt.simple2'] = Mock()
-    sys.modules['ticks_add'] = Mock()
-    time.ticks_add = Mock()
-    time.ticks_ms = Mock()
-    time.ticks_diff = Mock()
-    time.sleep_ms = lambda x: time.sleep(x / 1000)
-    asyncio.sleep_ms = lambda x: asyncio.sleep(x / 1000)
-    sys.print_exception = lambda *x: print(x)
-if sys.platform is 'darwin' and sys.implementation.name is 'micropython':
-    darwin_micropython = None
-
-
-
 import gc
 import mylogging
 import mypicoweb
@@ -53,11 +15,14 @@ from myled import blink_int
 from mywifi import stop_all_wifi, start_ap, wifi_connect
 from webresources import web_save, web_status, web_getconfig
 from mycatalarm import MyCatAlarm
+from mymocks import init_mocks
+
 try:
     import webrepl
 except ImportError:
     from mymocks import *
 
+init_mocks()
 
 WEBREPL_PASSWORD = 'cat'
 DEFAULT_CONFIG = {'essid': 'MYWIFI',
@@ -69,9 +34,14 @@ DEFAULT_CONFIG = {'essid': 'MYWIFI',
                   'mqtt_password': 'password'}
 
 
+def global_exception_handler(loop, context):
+    print('global exception handler ', context)
+
+
 def start_cat_alarm(config):
     wdt = WDT(timeout=30)
     loop = asyncio.get_event_loop()
+    loop.set_exception_handler(global_exception_handler)
     button_obj = MyPinIn(pin=14, event_loop=loop)
     pir_objs = MyPinIn(pin=12, event_loop=loop), MyPinIn(pin=13, event_loop=loop)
     cat_alarm = MyCatAlarm(button=button_obj, pirs=pir_objs, event_loop=loop, config=config, wdt=wdt)
