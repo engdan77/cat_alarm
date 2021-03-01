@@ -38,16 +38,20 @@ def init_mocks():
         darwin_micropython = None
 
 
+DEFAULT_PIN_VALUE = {12: 0, 13: 0, 14: 1}
+
 class Pin:
     PULL_UP = 0
     IN = 0
     OUT = 0
 
     def __init__(self, *args, **kwargs):
-        pass
+        self.pin = args[0]
 
     def value(self, *args):
-        return 0
+        v = DEFAULT_PIN_VALUE.get(self.pin, 0)
+        print('pin', self.pin, 'return', v)
+        return v
 
 class network:
     class WLAN:
@@ -64,6 +68,9 @@ def reset():
     pass
 
 def webrepl():
+    pass
+
+def settime():
     pass
 
 class Timer:

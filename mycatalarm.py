@@ -1,7 +1,8 @@
 import utime
-try:
+import sys
+if 'esp' in sys.platform:
     from machine import Pin
-except ImportError:
+else:
     from mymocks import *
 import uasyncio as asyncio
 from mymqtt import publish

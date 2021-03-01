@@ -4,6 +4,9 @@ __license__ = "MIT"
 __version__ = "0.0.1"
 __email__ = "daniel@engvalls.eu"
 
+from mymocks import init_mocks
+init_mocks()
+
 import gc
 import mylogging
 import mypicoweb
@@ -13,16 +16,15 @@ from myconfig import get_config, save_config
 from mywatchdog import WDT
 from myled import blink_int
 from mywifi import stop_all_wifi, start_ap, wifi_connect
-from webresources import web_save, web_status, web_getconfig
+from webresources import web_status, web_index, web_honk, web_change_state
 from mycatalarm import MyCatAlarm
-from mymocks import init_mocks
 
 try:
     import webrepl
+    from ntptime import settime
 except ImportError:
     from mymocks import *
 
-init_mocks()
 
 WEBREPL_PASSWORD = 'cat'
 DEFAULT_CONFIG = {'essid': 'MYWIFI',
@@ -31,7 +33,9 @@ DEFAULT_CONFIG = {'essid': 'MYWIFI',
                   'mqtt_broker': '127.0.0.1',
                   'mqtt_topic': '/cat_alarm/motion',
                   'mqtt_username': 'username',
-                  'mqtt_password': 'password'}
+                  'mqtt_password': 'password',
+                  'enable': False,
+                  'hours': '9-15'}
 
 
 def global_exception_handler(loop, context):
@@ -42,17 +46,18 @@ def start_cat_alarm(config):
     wdt = WDT(timeout=30)
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(global_exception_handler)
-    button_obj = MyPinIn(pin=14, event_loop=loop)
-    pir_objs = MyPinIn(pin=12, event_loop=loop), MyPinIn(pin=13, event_loop=loop)
+    button_obj = MyPinIn(pin=14, pull=Pin.PULL_UP, active_state=0, event_loop=loop)
+    pir_objs = MyPinIn(pin=12, bounce_ms=5000, event_loop=loop), MyPinIn(pin=13, bounce_ms=5000, event_loop=loop)
     cat_alarm = MyCatAlarm(button=button_obj, pirs=pir_objs, event_loop=loop, config=config, wdt=wdt)
 
     mylogging.basicConfig(level=mylogging.INFO)
     log = mylogging.getLogger(__name__)
 
     app = mypicoweb.MyPicoWeb(__name__, button_obj=button_obj, cat_alarm=cat_alarm)
-    app.add_url_rule('/save', web_save)
+    app.add_url_rule('/', web_index)
+    app.add_url_rule('/honk', web_honk)
+    app.add_url_rule('/change', web_change_state)
     app.add_url_rule('/status', web_status)
-    app.add_url_rule('/getconfig', web_getconfig)
 
     gc.collect()
     app.run(host="0.0.0.0", port=80, log=log, debug=True)
@@ -60,6 +65,8 @@ def start_cat_alarm(config):
 
 def main():
     print('start')
+    settime()
+
     # clicks = blocking_count_clicks(timeout=5)
     clicks = 0
     if clicks == 1:
