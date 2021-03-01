@@ -14,15 +14,15 @@ class MyPinIn:
         self.pin = pin
         self.pull = pull
         if event_loop:
-            event_loop.create_task(self.check_presses())
+            event_loop.create_task(self.check_low())
 
-    async def check_presses(self, sleep_ms=300, bounce_ms=1000):
+    async def check_low(self, sleep_ms=300, bounce_ms=1000):
         while True:
             await asyncio.sleep_ms(sleep_ms)
             p = Pin(self.pin, Pin.IN, self.pull)
             if bool(p.value()) is False:
                 self.active_queue.append(True)
-                print('active')
+                print(self.pin, ' pulled ', self.pull)
                 await asyncio.sleep_ms(bounce_ms)
 
     @property
