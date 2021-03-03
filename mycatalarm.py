@@ -6,6 +6,33 @@ else:
     from mymocks import *
 import uasyncio as asyncio
 from mymqtt import publish
+import time
+
+
+def zpad(s):
+    if len(str(s)) < 2:
+        s = '0{}'.format(s)
+    return s
+
+
+def get_date():
+    y, month, day, h, m, *_ = time.localtime()
+    h += 1
+    if h > 24:
+        h = 1
+    return '{}/{} {}:{}'.format(day, month, zpad(h), zpad(m))
+
+
+def get_alarm_time(c=None):
+    _, _, _, h, m, *_ = time.localtime()
+    if not c:
+        return None, h, m
+    h += 1
+    if h > 24:
+        h = 1
+    f, t = c['hours'].split('-')
+    between = int(f) < h < int(t)
+    return between, zpad(h), zpad(m)
 
 
 class MyCatAlarm:
@@ -17,6 +44,7 @@ class MyCatAlarm:
                  event_loop=None,
                  config=None,
                  wdt=None):
+        self.motions = []
         self.wdt = wdt
         self.relay = Pin(relay_pin, Pin.OUT)
         self.led = Pin(led_pin, Pin.OUT)
@@ -24,6 +52,7 @@ class MyCatAlarm:
         self.button = button
         self.pirs = pirs
         self.state = False
+        self.config = config
         self.mqtt_enabled = config.get('mqtt_enabled', False)
         self.mqtt_broker = config.get('mqtt_broker', None)
         self.mqtt_topic = config.get('mqtt_topic').encode()
@@ -44,13 +73,16 @@ class MyCatAlarm:
     async def check_motions(self, sleep_ms=500, button_time_secs=1, idle_time=8000):
         while True:
             await asyncio.sleep_ms(sleep_ms)
+            between, h, m = get_alarm_time(self.config)
+            enabled = self.config.get('enable', False)
             if any([self.button.active, any([p.active for p in self.pirs])]):
-                print('honk')
-                await self.honk()
+                print('movement detected')
+                if enabled and between:
+                    await self.honk()
                 await asyncio.sleep(button_time_secs)
 
                 if self.mqtt_enabled:
-                    message = 'honk'
+                    message = 'motion'
                     # publish MQTT if enabled
                     print('publishing {} to broker {} topic {}'.format(message, self.mqtt_broker, self.mqtt_topic))
                     publish(b'cat_alarm_client',
@@ -71,3 +103,10 @@ class MyCatAlarm:
         print("honk stopped")
         self.relay.value(False)
 
+    def add_motion(self, max=8):
+        self.motions.append(get_date())
+        if len(self.motions) > max:
+            self.motions.pop(0)
+
+    def get_motions(self):
+        return reversed(self.motions)

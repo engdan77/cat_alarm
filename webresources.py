@@ -1,5 +1,5 @@
 import gc
-import time
+from mycatalarm import get_alarm_time
 try:
     from machine import reset
     import ujson
@@ -22,20 +22,13 @@ async def w(writer_obj, data):
 
 
 async def web_index(req, resp, **kwargs):
+    my_cat = kwargs['cat_alarm']
     c = get_config()
-
-    _, _, _, h, m, *_ = time.localtime()
-    h += 1
-    if h > 24:
-        h = 1
-
-    f, t = c['hours'].split('-')
-    between = int(f) < h < int(t)
-
+    between, h, m = get_alarm_time(c)
     await mypicoweb.start_response(resp)
     html = '<html>'
     html += '<body style="background-color:black;">'
-    html += '<p style="color:white;">Cat Alarm</p>'
+    html += '<p style="color:white;"><b><u>Daniels Cat Alarm</u><b></p>'
     html += '<p style="color:white;">Time: {}:{}</p>'.format(h, m)
     html += '<p style="color:white;">Enabled: {}</p>'.format(c['enable'])
     html += '<p style="color:white;">Between hours: {} ({})</p>'.format(c['hours'], between)
@@ -44,6 +37,9 @@ async def web_index(req, resp, **kwargs):
     html += """<input type=button onClick="parent.location='change?state=on'"value='Turn ON'>"""
     html += """<input type=button onClick="parent.location='change?state=off'"value='Turn OFF'>"""
     html += """<br><br><img src="https://www.clipartmax.com/png/full/275-2751327_illustration-of-a-cartoon-scared-cat-cartoon-scared-cat-transparent.png", height=200, width=200>"""
+    html += '<p style="color:white;">Motions detected</p>'
+    for _ in my_cat.motions:
+        html += '<p style="color:white;">{}</p>'.format(_)
     html += '</html>'
     await w(resp, html)
     gc.collect()

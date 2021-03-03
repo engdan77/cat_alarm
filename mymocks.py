@@ -44,7 +44,7 @@ def init_mocks():
         asyncio.sleep_ms = lambda x: asyncio.sleep(x / 1000)
         sys.print_exception = lambda *x: print(x)
     if sys.platform is not 'esp' and sys.implementation.name is 'micropython':
-        darwin_micropython = None
+        pass
 
 
 DEFAULT_PIN_VALUE = {12: 0, 13: 0, 14: 1}
@@ -61,6 +61,20 @@ class Pin:
         v = DEFAULT_PIN_VALUE.get(self.pin, 0)
         print('pin', self.pin, 'return', v)
         return v
+
+
+class DHT22:
+    def __init__(self, *args):
+        pass
+
+    def measure(self):
+        pass
+
+    def temperature(self):
+        return 22.3
+
+    def humidity(self):
+        return 99
 
 class network:
     class WLAN:

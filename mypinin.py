@@ -2,6 +2,7 @@ from mymocks import shall_mock
 shall_mock()
 
 from machine import Pin
+from dht import DHT22
 from ucollections import deque
 import uasyncio as asyncio
 import utime
@@ -51,3 +52,12 @@ def blocking_count_clicks(button_pin=14, timeout=5, debounce_ms=5, sleep_ms=10):
                 print('button pressed')
         utime.sleep_ms(sleep_ms)
     return press_count
+
+
+def get_temp(pin=13):
+    # dht d7, gpio13, import dht
+    x = DHT22(Pin(pin))
+    x.measure()
+    temp = x.temperature()
+    humid = x.humidity()
+    return temp, humid
