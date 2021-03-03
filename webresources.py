@@ -43,6 +43,7 @@ async def web_index(req, resp, **kwargs):
  value='HONK!!!'>"""
     html += """<input type=button onClick="parent.location='change?state=on'"value='Turn ON'>"""
     html += """<input type=button onClick="parent.location='change?state=off'"value='Turn OFF'>"""
+    html += """<br><br><img src="https://www.clipartmax.com/png/full/275-2751327_illustration-of-a-cartoon-scared-cat-cartoon-scared-cat-transparent.png", height=200, width=200>"""
     html += '</html>'
     await w(resp, html)
     gc.collect()
@@ -56,6 +57,8 @@ async def web_honk(req, resp, **kwargs):
     html += '<p style="color:white;">HONK HONK !!</p>'
     html += '</html>'
     await w(resp, html)
+    my_cat = kwargs['cat_alarm']
+    await my_cat.honk()
     gc.collect()
 
 

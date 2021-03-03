@@ -1,9 +1,16 @@
 import sys
 
 
+def shall_mock():
+    import sys
+    if 'esp' not in sys.platform and sys.implementation.name is not 'micropython':
+        init_mocks()
+        return True
+    return False
+
+
 def init_mocks():
     if 'esp' not in sys.platform and sys.implementation.name is not 'micropython':
-        mocked_python = None
         import time
         import re
         import errno
@@ -12,6 +19,7 @@ def init_mocks():
         import asyncio
         import io
         import json
+        import collections
         from unittest.mock import Mock
         sys.modules['utime'] = time
         sys.modules['micropython'] = Mock()
@@ -28,6 +36,7 @@ def init_mocks():
         sys.modules['webrepl'] = Mock()
         sys.modules['umqtt.simple2'] = Mock()
         sys.modules['ticks_add'] = Mock()
+        sys.modules['ucollections'] = collections
         time.ticks_add = Mock()
         time.ticks_ms = Mock()
         time.ticks_diff = Mock()

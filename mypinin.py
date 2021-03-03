@@ -1,7 +1,7 @@
-try:
-    from machine import Pin
-except ImportError:
-    from mymocks import *
+from mymocks import shall_mock
+shall_mock()
+
+from machine import Pin
 from ucollections import deque
 import uasyncio as asyncio
 import utime

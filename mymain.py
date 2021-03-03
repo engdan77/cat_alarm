@@ -47,8 +47,12 @@ def start_cat_alarm(config):
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(global_exception_handler)
     button_obj = MyPinIn(pin=14, pull=Pin.PULL_UP, active_state=0, event_loop=loop)
-    pir_objs = MyPinIn(pin=12, bounce_ms=5000, event_loop=loop), MyPinIn(pin=13, bounce_ms=5000, event_loop=loop)
+    pir_objs = MyPinIn(pin=12, bounce_ms=5000, event_loop=loop), MyPinIn(pin=4, bounce_ms=5000, event_loop=loop)
     cat_alarm = MyCatAlarm(button=button_obj, pirs=pir_objs, event_loop=loop, config=config, wdt=wdt)
+    # dht d7, gpio13, import dht
+    # x = dht.DHT22(Pin(13))
+    # x.measure()
+    # x.temperature()
 
     mylogging.basicConfig(level=mylogging.INFO)
     log = mylogging.getLogger(__name__)
