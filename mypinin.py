@@ -54,10 +54,20 @@ def blocking_count_clicks(button_pin=14, timeout=5, debounce_ms=5, sleep_ms=10):
     return press_count
 
 
-def get_temp(pin=13):
-    # dht d7, gpio13, import dht
-    x = DHT22(Pin(pin))
-    x.measure()
-    temp = x.temperature()
-    humid = x.humidity()
-    return temp, humid
+class MyDHT:
+    def __init__(self, pin=13, dht_type=DHT22, event_loop=None):
+        self.temp = 0
+        self.humid = 0
+        self.pin = pin
+        self.dht_type = dht_type
+        if event_loop:
+            event_loop.create_task(self.check_changes())
+
+    async def check_changes(self, sleep_ms=5000):
+        while True:
+            await asyncio.sleep_ms(sleep_ms)
+            p = Pin(self.pin)
+            d = self.dht_type(p)
+            d.measure()
+            self.temp = d.temperature()
+            self.humid = d.humidity()

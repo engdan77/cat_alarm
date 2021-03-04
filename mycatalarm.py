@@ -37,10 +37,11 @@ def get_alarm_time(c=None):
 
 class MyCatAlarm:
     def __init__(self,
-                 relay_pin=12,
+                 relay_pin=5,
                  led_pin=2,
                  button=None,
                  pirs=[],
+                 dht=None,
                  event_loop=None,
                  config=None,
                  wdt=None):
@@ -51,6 +52,7 @@ class MyCatAlarm:
         self.led.value(True)
         self.button = button
         self.pirs = pirs
+        self.dht = dht
         self.state = False
         self.config = config
         self.mqtt_enabled = config.get('mqtt_enabled', False)

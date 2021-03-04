@@ -11,7 +11,7 @@ import gc
 import mylogging
 import mypicoweb
 import uasyncio as asyncio
-from mypinin import MyPinIn, blocking_count_clicks
+from mypinin import MyPinIn, MyDHT
 from myconfig import get_config, save_config
 from mywatchdog import WDT
 from myled import blink_int
@@ -46,9 +46,10 @@ def start_cat_alarm(config):
     wdt = WDT(timeout=30)
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(global_exception_handler)
+    dht_obj = MyDHT(13, dht_type=DHT22, event_loop=loop)
     button_obj = MyPinIn(pin=14, pull=Pin.PULL_UP, active_state=0, event_loop=loop)
     pir_objs = MyPinIn(pin=12, bounce_ms=5000, event_loop=loop), MyPinIn(pin=4, bounce_ms=5000, event_loop=loop)
-    cat_alarm = MyCatAlarm(button=button_obj, pirs=pir_objs, event_loop=loop, config=config, wdt=wdt)
+    cat_alarm = MyCatAlarm(button=button_obj, pirs=pir_objs, dht=dht_obj, event_loop=loop, config=config, wdt=wdt)
 
     mylogging.basicConfig(level=mylogging.INFO)
     log = mylogging.getLogger(__name__)

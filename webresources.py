@@ -29,6 +29,7 @@ async def web_index(req, resp, **kwargs):
     html = '<html>'
     html += '<body style="background-color:black;">'
     html += '<p style="color:white;"><b><u>Daniels Cat Alarm</u><b></p>'
+    html += '<p style="color:white;">Temp (humidity): {} ({})</p>'.format(my_cat.dht.temp, my_cat.dht.humid)
     html += '<p style="color:white;">Time: {}:{}</p>'.format(h, m)
     html += '<p style="color:white;">Enabled: {}</p>'.format(c['enable'])
     html += '<p style="color:white;">Between hours: {} ({})</p>'.format(c['hours'], between)

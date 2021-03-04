@@ -23,6 +23,7 @@ def init_mocks():
         from unittest.mock import Mock
         sys.modules['utime'] = time
         sys.modules['micropython'] = Mock()
+        sys.modules['dht'] = Mock()
         sys.modules['ure'] = re
         sys.modules['uerrno'] = errno
         sys.modules['uselect'] = select
