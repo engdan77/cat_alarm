@@ -3,6 +3,7 @@ from mycatalarm import get_alarm_time
 try:
     from machine import reset
     import ujson
+    import machine
 except ImportError:
     from mymocks import *
 import mypicoweb
@@ -37,6 +38,7 @@ async def web_index(req, resp, **kwargs):
  value='HONK!!!'>"""
     html += """<input type=button onClick="parent.location='change?state=on'"value='Turn ON'>"""
     html += """<input type=button onClick="parent.location='change?state=off'"value='Turn OFF'>"""
+    html += """<input type=button onClick="parent.location='reboot'" value='Reboot'>"""
     html += """<br><br><img src="https://www.clipartmax.com/png/full/275-2751327_illustration-of-a-cartoon-scared-cat-cartoon-scared-cat-transparent.png", height=200, width=200>"""
     html += '<p style="color:white;">Motions detected</p>'
     for _ in my_cat.motions:
@@ -44,6 +46,18 @@ async def web_index(req, resp, **kwargs):
     html += '</html>'
     await w(resp, html)
     gc.collect()
+
+
+async def web_reboot(req, resp, **kwargs):
+    await mypicoweb.start_response(resp)
+    html = '<html>'
+    html += '<meta http-equiv="refresh" content="10; URL=/" />'
+    html += '<body style="background-color:black;">'
+    html += '<p style="color:white;">Rebooting !!</p>'
+    html += '</html>'
+    await w(resp, html)
+    print('rebooting')
+    machine.reset()
 
 
 async def web_honk(req, resp, **kwargs):

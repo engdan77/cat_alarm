@@ -16,7 +16,7 @@ from myconfig import get_config, save_config
 from mywatchdog import WDT
 from myled import blink_int
 from mywifi import MyWifi
-from webresources import web_status, web_index, web_honk, web_change_state
+from webresources import web_status, web_index, web_honk, web_change_state, web_reboot
 from mycatalarm import MyCatAlarm
 from mymocks import shall_mock
 
@@ -61,6 +61,7 @@ def start_cat_alarm(config):
     app.add_url_rule('/honk', web_honk)
     app.add_url_rule('/change', web_change_state)
     app.add_url_rule('/status', web_status)
+    app.add_url_rule('/reboot', web_reboot)
 
     gc.collect()
     app.run(host="0.0.0.0", port=80, log=log, debug=True)
