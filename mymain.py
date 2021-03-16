@@ -15,7 +15,7 @@ from mypinin import MyPinIn, MyDHT
 from myconfig import get_config, save_config
 from mywatchdog import WDT
 from myled import blink_int
-from mywifi import stop_all_wifi, start_ap, wifi_connect
+from mywifi import MyWifi
 from webresources import web_status, web_index, web_honk, web_change_state
 from mycatalarm import MyCatAlarm
 
@@ -27,7 +27,7 @@ except ImportError:
 
 
 WEBREPL_PASSWORD = 'cat'
-DEFAULT_CONFIG = {'essid': 'MYWIFI',
+DEFAULT_CONFIG = {'ssid': 'MYWIFI',
                   'password': 'MYPASSWORD',
                   'mqtt_enabled': 'false',
                   'mqtt_broker': '127.0.0.1',
@@ -46,6 +46,9 @@ def start_cat_alarm(config):
     wdt = WDT(timeout=30)
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(global_exception_handler)
+
+    MyWifi(config['ssid'], config['password'], event_loop=loop, led_pin=2)
+
     dht_obj = MyDHT(13, dht_type=DHT22, event_loop=loop)
     button_obj = MyPinIn(pin=14, pull=Pin.PULL_UP, active_state=0, event_loop=loop)
     pir_objs = MyPinIn(pin=12, bounce_ms=5000, event_loop=loop), MyPinIn(pin=4, bounce_ms=5000, event_loop=loop)
@@ -74,12 +77,9 @@ def main():
         print('reset configuration')
         blink_int(on_time=1000)
         save_config(DEFAULT_CONFIG)
-    stop_all_wifi()
     c = get_config(DEFAULT_CONFIG)
     print('config loaded {}'.format(c))
-    wifi_connected = wifi_connect(c['essid'], c['password'])
-    if not wifi_connected:
-        start_ap()
+
     if clicks == 2:
         print('starting webrepl using password {}'.format(WEBREPL_PASSWORD))
         blink_int(count=10, on_time=200)
