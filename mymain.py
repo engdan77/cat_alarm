@@ -1,7 +1,7 @@
 """cat alarm: project for scaring cats"""
 
 __license__ = "MIT"
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 __email__ = "daniel@engvalls.eu"
 
 from mymocks import init_mocks
@@ -21,7 +21,6 @@ from mycatalarm import MyCatAlarm
 
 try:
     import webrepl
-    from ntptime import settime
 except ImportError:
     from mymocks import *
 
@@ -69,8 +68,6 @@ def start_cat_alarm(config):
 
 def main():
     print('start')
-    settime()
-
     # clicks = blocking_count_clicks(timeout=5)
     clicks = 0
     if clicks == 1:

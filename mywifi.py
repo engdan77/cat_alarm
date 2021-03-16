@@ -10,6 +10,7 @@ import usocket
 import ustruct
 import urandom
 import uasyncio as asyncio
+from ntptime import settime
 from myled import async_blink_int
 
 
@@ -34,6 +35,7 @@ class MyWifi:
             ip, subnet, gateway, dns = self.sta_if.ifconfig()
             _, recv = ping(gateway)
             disconnect_count = 0
+            connected_before = self.connected
             self.connected = bool(recv)
             print('wifi connected', self.connected)
             if self.led_pin:
@@ -47,6 +49,10 @@ class MyWifi:
                 stop_all_wifi()
                 start_ap('cat_alarm')
                 break
+
+            if not connected_before and self.connected:
+                print('reconnected wifi and setup time')
+                settime()
 
 
 def stop_all_wifi():
