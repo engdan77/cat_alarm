@@ -18,11 +18,11 @@ from myled import blink_int
 from mywifi import MyWifi
 from webresources import web_status, web_index, web_honk, web_change_state
 from mycatalarm import MyCatAlarm
+from mymocks import shall_mock
 
-try:
-    import webrepl
-except ImportError:
+if shall_mock():
     from mymocks import *
+    init_mocks()
 
 
 WEBREPL_PASSWORD = 'cat'

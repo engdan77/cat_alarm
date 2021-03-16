@@ -20,14 +20,21 @@ def init_mocks():
         import io
         import json
         import collections
+        import ctypes
+        import struct
+        import random
         from unittest.mock import Mock
         sys.modules['utime'] = time
         sys.modules['micropython'] = Mock()
         sys.modules['dht'] = Mock()
         sys.modules['ure'] = re
+        sys.modules['ntptime'] = Mock()
         sys.modules['uerrno'] = errno
+        sys.modules['uctypes'] = ctypes
         sys.modules['uselect'] = select
+        sys.modules['ustruct'] = struct
         sys.modules['usocket'] = socket
+        sys.modules['urandom'] = random
         sys.modules['uasyncio'] = asyncio
         sys.modules['uio'] = io
         sys.modules['machine'] = Mock()
@@ -64,6 +71,11 @@ class Pin:
         return v
 
 
+class MyWifi:
+    def __init__(self, *args, **kwargs):
+        pass
+
+
 class DHT22:
     def __init__(self, *args):
         pass
@@ -76,6 +88,7 @@ class DHT22:
 
     def humidity(self):
         return 99
+
 
 class network:
     class WLAN:
