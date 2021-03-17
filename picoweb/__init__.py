@@ -14,19 +14,19 @@ from .utils import parse_qs
 SEND_BUFSZ = 128
 
 
-async def w(writer_obj, *data):
-    """Special handler to support StreamWriter on ESP or other"""
-    print("writing new: {}".format(data))
-    import sys
-    if 'esp' not in sys.platform:
-        if not len(data):
-            writer_obj.write(data.encode())
-        else:
-            writer_obj.write(*data)
-        await writer_obj.drain()
-    else:
-        writer_obj.write(*data)
-        await writer_obj.drain()
+# async def w(writer_obj, *data):
+#     """Special handler to support StreamWriter on ESP or other"""
+#     print("writing new: {}".format(data))
+#     import sys
+#     if 'esp' not in sys.platform:
+#         if not len(data):
+#             writer_obj.write(data.encode())
+#         else:
+#             writer_obj.write(*data)
+#         await writer_obj.drain()
+#     else:
+#         writer_obj.write(*data)
+#         await writer_obj.drain()
 
 
 async def c(writer_obj):
@@ -68,13 +68,14 @@ async def jsonify(writer, dict):
 
 async def w(writer_obj, data):
     """Special handler to support StreamWriter on ESP or other"""
-    print("writing: {}".format(data))
+    print("writing (picoweb): {}".format(data))
     import sys
     if 'esp' not in sys.platform:
         writer_obj.write(data.encode())
         await writer_obj.drain()
     else:
-        writer_obj.awrite(data)
+        writer_obj.write(data)
+        await writer_obj.drain()
 
 
 async def start_response(writer, content_type="text/html; charset=utf-8", status="200", headers=None):

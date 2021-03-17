@@ -12,7 +12,7 @@ from myconfig import get_config, save_config
 
 async def w(writer_obj, data):
     """Special handler to support StreamWriter on ESP or other"""
-    print("writing: {}".format(data))
+    print("writing (webresources): {}".format(data))
     import sys
     if 'esp' not in sys.platform:
         writer_obj.write(data.encode())
