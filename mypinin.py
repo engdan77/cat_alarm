@@ -10,7 +10,7 @@ from myled import blink_int
 
 
 class MyPinIn:
-    def __init__(self, pin=14, pull=Pin.PULL_UP, active_state=1, bounce_ms=1000, event_loop=None):
+    def __init__(self, pin=14, pull=None, active_state=1, bounce_ms=1000, event_loop=None):
         self.active_queue = deque((), 10)
         self.pin = pin
         self.pull = pull
@@ -23,8 +23,9 @@ class MyPinIn:
         while True:
             await asyncio.sleep_ms(sleep_ms)
             p = Pin(self.pin, Pin.IN, self.pull)
-            if bool(p.value()) is self.active_state:
+            if p.value() is self.active_state:
                 self.active_queue.append(True)
+                print('pin in active', str(self.pin))
                 await asyncio.sleep_ms(self.bounce_ms)
 
     @property

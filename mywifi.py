@@ -15,7 +15,7 @@ from myled import async_blink_int
 
 
 class MyWifi:
-    def __init__(self, ssid, password, event_loop=None, led_pin=None, poll_interval=None, max_disconnect=5):
+    def __init__(self, ssid, password, event_loop=None, led_pin=None, poll_interval=None, max_disconnect=30):
         if poll_interval is None:
             poll_interval = {True: 60, False: 20}
         self.max_disconnect = max_disconnect
@@ -36,7 +36,7 @@ class MyWifi:
             ip, subnet, gateway, dns = self.sta_if.ifconfig()
             print('attempt to ping')
             try:
-                _, recv = ping(gateway)
+                _, recv = ping(gateway, count=3)
             except OSError:
                 print('ping failed, trying again')
                 recv = 0
@@ -47,7 +47,10 @@ class MyWifi:
                 t = {True: (1, 1000), False: (20, 300)}
                 await async_blink_int(self.led_pin, *t[self.connected])
 
-            disconnect_count += 1 if not self.connected else 0
+            if not self.connected:
+                disconnect_count += 1
+            else:
+                disconnect_count = 0
             print('fail connect wifi', disconnect_count)
             if disconnect_count >= self.max_disconnect:
                 print('starting ap mode')
@@ -80,7 +83,7 @@ def start_ap(ssid='my_ssid'):
     utime.sleep(1)
 
 
-def wifi_connect(ssid, password, return_network=False):
+def wifi_connect(ssid, password, return_network=False, attempts=30):
     connected = False
     sta_if = network.WLAN(network.STA_IF)
     sta_if.active(False)
@@ -89,7 +92,7 @@ def wifi_connect(ssid, password, return_network=False):
         sta_if.connect(ssid, password)
         print('connecting to network..., pause 3 sec')
         utime.sleep(3)
-        for i in range(1, 10):
+        for i in range(1, attempts):
             print('attempt {}'.format(i))
             utime.sleep(1)
             if sta_if.isconnected():

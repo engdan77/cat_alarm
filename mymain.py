@@ -49,7 +49,7 @@ def start_cat_alarm(config):
 
     dht_obj = MyDHT(13, dht_type=DHT22, event_loop=loop)
     button_obj = MyPinIn(pin=14, pull=Pin.PULL_UP, active_state=0, event_loop=loop)
-    pir_objs = MyPinIn(pin=12, bounce_ms=5000, event_loop=loop), MyPinIn(pin=4, bounce_ms=5000, event_loop=loop)
+    pir_objs = (MyPinIn(pin=12, bounce_ms=5000, event_loop=loop), MyPinIn(pin=4, bounce_ms=5000, event_loop=loop))
     cat_alarm = MyCatAlarm(button=button_obj, pirs=pir_objs, dht=dht_obj, event_loop=loop, config=config, wdt=wdt)
 
     mylogging.basicConfig(level=mylogging.INFO)
@@ -66,7 +66,7 @@ def start_cat_alarm(config):
     app.run(host="0.0.0.0", port=80, log=log, debug=True)
 
 
-def main():
+def entry():
     print('start')
     # clicks = blocking_count_clicks(timeout=5)
     clicks = 0

@@ -79,6 +79,7 @@ class MyCatAlarm:
             enabled = self.config.get('enable', False)
             if any([self.button.active, any([p.active for p in self.pirs])]):
                 print('movement detected')
+                self.add_motion()
                 if enabled and between:
                     await self.honk()
                 await asyncio.sleep(button_time_secs)
@@ -106,7 +107,11 @@ class MyCatAlarm:
         self.relay.value(False)
 
     def add_motion(self, max=8):
-        self.motions.append(get_date())
+        d = get_date()
+        print('motion', d)
+        if d not in self.motions:
+            print('adding motion: ', self.motions)
+            self.motions.append(get_date())
         if len(self.motions) > max:
             self.motions.pop(0)
 

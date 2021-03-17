@@ -1,0 +1,2 @@
+import mymain
+mymain.entry()
