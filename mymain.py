@@ -4,8 +4,10 @@ __license__ = "MIT"
 __version__ = "0.0.3"
 __email__ = "daniel@engvalls.eu"
 
-from mymocks import init_mocks
-init_mocks()
+from mymocks import shall_mock
+if shall_mock():
+    from mymocks import *
+    init_mocks()
 
 import gc
 import mylogging
@@ -18,12 +20,9 @@ from myled import blink_int
 from mywifi import MyWifi
 from webresources import web_status, web_index, web_honk, web_change_state, web_reboot
 from mycatalarm import MyCatAlarm
-from mymocks import shall_mock
 
-if shall_mock():
-    from mymocks import *
-    init_mocks()
-
+from dht import DHT22
+from machine import Pin
 
 WEBREPL_PASSWORD = 'cat'
 DEFAULT_CONFIG = {'ssid': 'MYWIFI',

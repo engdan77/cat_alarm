@@ -17,7 +17,7 @@ from myled import async_blink_int
 class MyWifi:
     def __init__(self, ssid, password, event_loop=None, led_pin=None, poll_interval=None, max_disconnect=5):
         if poll_interval is None:
-            poll_interval = {True: 10, False: 5}
+            poll_interval = {True: 60, False: 20}
         self.max_disconnect = max_disconnect
         self.ssid = ssid
         self.password = password
@@ -30,11 +30,16 @@ class MyWifi:
             event_loop.create_task(self.check_changes())
 
     async def check_changes(self):
+        disconnect_count = 0
         while True:
             await asyncio.sleep(self.poll_interval[self.connected])
             ip, subnet, gateway, dns = self.sta_if.ifconfig()
-            _, recv = ping(gateway)
-            disconnect_count = 0
+            print('attempt to ping')
+            try:
+                _, recv = ping(gateway)
+            except OSError:
+                print('ping failed, trying again')
+                recv = 0
             connected_before = self.connected
             self.connected = bool(recv)
             print('wifi connected', self.connected)
@@ -52,7 +57,10 @@ class MyWifi:
 
             if not connected_before and self.connected:
                 print('reconnected wifi and setup time')
-                settime()
+                try:
+                    settime()
+                except OSError:
+                    print('unable to set time')
 
 
 def stop_all_wifi():
