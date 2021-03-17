@@ -27,6 +27,8 @@ RUN cd micropython/mpy-cross && make
 
 WORKDIR /micropython/ports/esp8266
 
+# RUN echo 'root:foo' | chpasswd
+
 # Remove the current ones to save some space
 # RUN rm /micropython/ports/esp8266/modules/*
 # Remove bTree to save storage
@@ -44,9 +46,9 @@ COPY urltools.py /micropython/ports/esp8266/modules/
 COPY mylogging.py /micropython/ports/esp8266/modules/
 
 COPY mywatchdog.py /micropython/ports/esp8266/modules/
-COPY mybutton.py /micropython/ports/esp8266/modules/
 COPY myconfig.py /micropython/ports/esp8266/modules/
 COPY mywifi.py /micropython/ports/esp8266/modules/
+COPY mypinin.py /micropython/ports/esp8266/modules/
 
 COPY myled.py /micropython/ports/esp8266/modules/
 COPY mypicoweb.py /micropython/ports/esp8266/modules/
@@ -54,5 +56,6 @@ COPY webresources.py /micropython/ports/esp8266/modules/
 COPY mycatalarm.py /micropython/ports/esp8266/modules/
 COPY mymain.py /micropython/ports/esp8266/modules/
 COPY mymqtt.py /micropython/ports/esp8266/modules/
+COPY mymocks.py /micropython/ports/esp8266/modules/
 
 RUN cd /micropython/ports/esp8266 && make
