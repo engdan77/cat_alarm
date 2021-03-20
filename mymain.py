@@ -46,7 +46,7 @@ def start_cat_alarm(config):
     relay_pin = 5
     Pin(relay_pin, Pin.OUT).value(0)  # avoid being on at start
 
-    wdt = WDT(timeout=30)
+    wdt = WDT(timeout=1200)
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(global_exception_handler)
 

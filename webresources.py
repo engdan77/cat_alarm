@@ -124,6 +124,7 @@ async def web_honk(req, resp, **kwargs):
 
 
 async def web_change_state(req, resp, **kwargs):
+    my_cat = kwargs['cat_alarm']
     await mypicoweb.start_response(resp)
     params = req.qs
     command, value = params.split('=') if len(params) > 1 else (None, None)
@@ -133,6 +134,7 @@ async def web_change_state(req, resp, **kwargs):
         s = {'on': True, 'off': False}.get(value, None)
     c = get_config()
     c['enable'] = s
+    my_cat.config['enable'] = s
     save_config(c)
 
     html = '<html>'

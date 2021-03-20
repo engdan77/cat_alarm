@@ -34,9 +34,11 @@ class MyPinIn:
                 self.active_queue.popleft()
             except (ValueError, IndexError):
                 print('draining complete')
+                break
             except Exception:
                 print('other error while draining')
-            asyncio.sleep_ms(sleep_ms)
+                break
+                asyncio.sleep_ms(sleep_ms)
 
     @property
     def active(self):
