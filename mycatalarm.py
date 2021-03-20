@@ -31,7 +31,7 @@ def get_alarm_time(c=None):
     if h > 24:
         h = 1
     f, t = c['hours'].split('-')
-    between = int(f) < h < int(t)
+    between = int(f) <= h <= int(t)
     return between, zpad(h), zpad(m)
 
 
@@ -40,11 +40,13 @@ class MyCatAlarm:
                  relay_pin=5,
                  led_pin=2,
                  button=None,
-                 pirs=[],
+                 pirs=None,
                  dht=None,
                  event_loop=None,
                  config=None,
                  wdt=None):
+        if pirs is None:
+            pirs = []
         self.motions = []
         self.wdt = wdt
         self.relay = Pin(relay_pin, Pin.OUT)
@@ -72,16 +74,18 @@ class MyCatAlarm:
                     self.mqtt_password)
         print("cat alarm")
 
-    async def check_motions(self, sleep_ms=500, button_time_secs=1, idle_time=8000):
+    async def check_motions(self, sleep_ms=500, button_time_secs=1, honk_time=1500, idle_time=20):
         while True:
             await asyncio.sleep_ms(sleep_ms)
             between, h, m = get_alarm_time(self.config)
             enabled = self.config.get('enable', False)
-            if any([self.button.active, any([p.active for p in self.pirs])]):
+            if any([p.active for p in self.pirs]):
                 print('movement detected')
                 self.add_motion()
+                print('enabled:', enabled)
+                print('between:', between)
                 if enabled and between:
-                    await self.honk()
+                    await self.honk(honk_time, idle_time)
                 await asyncio.sleep(button_time_secs)
 
                 if self.mqtt_enabled:
@@ -94,17 +98,20 @@ class MyCatAlarm:
                             message,
                             self.mqtt_username,
                             self.mqtt_password)
-                print('pausing until can be triggered again')
-                await asyncio.sleep_ms(idle_time)
+                for p in self.pirs:
+                    print('draining pir', p)
+                    await p.drain_queue()
             if self.wdt:
                 self.wdt.feed()
 
-    async def honk(self, honk_time=1500):
+    async def honk(self, honk_time=1500, idle_time=20):
         self.relay.value(True)
         print("honk started")
         await asyncio.sleep_ms(honk_time)
         print("honk stopped")
         self.relay.value(False)
+        print('pausing for', idle_time, 'seconds')
+        await asyncio.sleep(idle_time)
 
     def add_motion(self, max=8):
         d = get_date()

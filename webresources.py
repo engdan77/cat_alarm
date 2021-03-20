@@ -7,7 +7,44 @@ try:
 except ImportError:
     from mymocks import *
 import mypicoweb
+import webrepl
 from myconfig import get_config, save_config
+
+
+def unquote(string):
+    """unquote('abc%20def') -> b'abc def'."""
+    _hextobyte_cache = {}
+    # Note: strings are encoded as UTF-8. This is only an issue if it contains
+    # unescaped non-ASCII characters, which URIs should not.
+    if not string:
+        return b''
+    if isinstance(string, str):
+        string = string.encode('utf-8')
+    bits = string.split(b'%')
+    if len(bits) == 1:
+        return string
+    res = [bits[0]]
+    append = res.append
+    for item in bits[1:]:
+        try:
+            code = item[:2]
+            char = _hextobyte_cache.get(code)
+            if char is None:
+                char = _hextobyte_cache[code] = bytes([int(code, 16)])
+            append(char)
+            append(item[2:])
+        except KeyError:
+            append(b'%')
+            append(item)
+    return b''.join(res)
+
+
+def query_params_to_dict(input_params):
+    params = {x[0]: unquote(x[1])
+              for x in
+              [x.split("=") for x in input_params.split("&")]
+              }
+    return params
 
 
 async def w(writer_obj, data):
@@ -39,9 +76,10 @@ async def web_index(req, resp, **kwargs):
     html += """<input type=button onClick="parent.location='change?state=on'"value='Turn ON'>"""
     html += """<input type=button onClick="parent.location='change?state=off'"value='Turn OFF'>"""
     html += """<input type=button onClick="parent.location='reboot'" value='Reboot'>"""
+    html += """<input type=button onClick="parent.location='webrepl'" value='Debug'>"""
     html += """<br><br><img src="https://www.clipartmax.com/png/full/275-2751327_illustration-of-a-cartoon-scared-cat-cartoon-scared-cat-transparent.png", height=200, width=200>"""
     html += '<p style="color:white;">Motions detected</p>'
-    for _ in my_cat.motions:
+    for _ in reversed(my_cat.motions):
         html += '<p style="color:white;">{}</p>'.format(_)
     html += '</html>'
     await w(resp, html)
@@ -58,6 +96,18 @@ async def web_reboot(req, resp, **kwargs):
     await w(resp, html)
     print('rebooting')
     machine.reset()
+
+
+async def web_repl(req, resp, **kwargs):
+    await mypicoweb.start_response(resp)
+    html = '<html>'
+    html += '<meta http-equiv="refresh" content="10; URL=/" />'
+    html += '<body style="background-color:black;">'
+    html += '<p style="color:white;">Starting REPL !!</p>'
+    html += '</html>'
+    await w(resp, html)
+    print('start webrepl')
+    webrepl.start_foreground()
 
 
 async def web_honk(req, resp, **kwargs):
@@ -96,7 +146,6 @@ async def web_change_state(req, resp, **kwargs):
 
 async def web_status(req, resp, **kwargs):
     gc.collect()
-    cat_alarm = kwargs.get('cat_alarm', None)
     await mypicoweb.start_response(resp)
     params = req.qs
     print('parsing query param {}'.format(params))
@@ -108,3 +157,26 @@ async def web_status(req, resp, **kwargs):
         # cat_alarm.switch_state(s)
     return_data = {'status': s, 'params': str(params)}
     await w(resp, ujson.dumps(return_data))
+
+
+async def web_save_config(req, resp, **kwargs):
+    await mypicoweb.start_response(resp)
+    params = query_params_to_dict(req.qs)
+    print('saving configuration {}'.format(params))
+    save_config(params)
+    await w(resp, '''<html>
+    <body style="background-color:blue;">
+    <center><p>Configuration saved, rebooting...</p></center>
+    </body>
+    </html>''')
+    reset()
+
+
+async def web_get_config(req, resp, **kwargs):
+    default_config = kwargs.get('config', None)
+    gc.collect()
+    await mypicoweb.start_response(resp)
+    c = get_config(default_config)
+    print('config loaded {}'.format(c))
+    j = ujson.dumps(c)
+    await w(resp, j)

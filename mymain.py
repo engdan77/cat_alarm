@@ -18,8 +18,10 @@ from myconfig import get_config, save_config
 from mywatchdog import WDT
 from myled import blink_int
 from mywifi import MyWifi
-from webresources import web_status, web_index, web_honk, web_change_state, web_reboot
+from webresources import web_status, web_index, web_honk, web_change_state
+from webresources import web_reboot, web_get_config, web_save_config, web_repl
 from mycatalarm import MyCatAlarm
+import webrepl
 
 from dht import DHT22
 from machine import Pin
@@ -41,6 +43,9 @@ def global_exception_handler(loop, context):
 
 
 def start_cat_alarm(config):
+    relay_pin = 5
+    Pin(relay_pin, Pin.OUT).value(0)  # avoid being on at start
+
     wdt = WDT(timeout=30)
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(global_exception_handler)
@@ -61,6 +66,9 @@ def start_cat_alarm(config):
     app.add_url_rule('/change', web_change_state)
     app.add_url_rule('/status', web_status)
     app.add_url_rule('/reboot', web_reboot)
+    app.add_url_rule('/get_config', web_get_config)
+    app.add_url_rule('/save_config', web_save_config)
+    app.add_url_rule('/webrepl', web_repl)
 
     gc.collect()
     app.run(host="0.0.0.0", port=80, log=log, debug=True)
@@ -88,4 +96,4 @@ def entry():
 
 
 if __name__ == '__main__':
-    main()
+    entry()

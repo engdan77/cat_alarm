@@ -28,6 +28,16 @@ class MyPinIn:
                 print('pin in active', str(self.pin))
                 await asyncio.sleep_ms(self.bounce_ms)
 
+    async def drain_queue(self, sleep_ms=50):
+        while True:
+            try:
+                self.active_queue.popleft()
+            except (ValueError, IndexError):
+                print('draining complete')
+            except Exception:
+                print('other error while draining')
+            asyncio.sleep_ms(sleep_ms)
+
     @property
     def active(self):
         try:

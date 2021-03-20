@@ -16,8 +16,11 @@ def get_config(input_default_config=None, config_file='config.json'):
 
 def save_config(input_config, config_file='config.json'):
     if input_config:
-        c = input_config
+        input_config = {k: v.decode() if type(v) is bytes else v for k, v in input_config.items()}
         with open(config_file, 'w') as f:
-            f.write(ujson.dumps(c))
+            try:
+                f.write(ujson.dumps(input_config))
+            except TypeError:
+                print('wrong format of JSON')
     else:
         print('No default config given')
