@@ -77,6 +77,7 @@ async def web_index(req, resp, **kwargs):
     html += """<input type=button onClick="parent.location='change?state=off'"value='Turn OFF'>"""
     html += """<input type=button onClick="parent.location='reboot'" value='Reboot'>"""
     html += """<input type=button onClick="parent.location='webrepl'" value='Debug'>"""
+    html += """<input type=button onClick="parent.location='config'" value='Configure'>"""
     html += """<br><br><img src="https://www.clipartmax.com/png/full/275-2751327_illustration-of-a-cartoon-scared-cat-cartoon-scared-cat-transparent.png", height=200, width=200>"""
     html += '<p style="color:white;">Motions detected</p>'
     for _ in reversed(my_cat.motions):
@@ -167,7 +168,7 @@ async def web_save_config(req, resp, **kwargs):
     print('saving configuration {}'.format(params))
     save_config(params)
     await w(resp, '''<html>
-    <body style="background-color:blue;">
+    <body style="background-color:black;">
     <center><p>Configuration saved, rebooting...</p></center>
     </body>
     </html>''')
@@ -182,3 +183,31 @@ async def web_get_config(req, resp, **kwargs):
     print('config loaded {}'.format(c))
     j = ujson.dumps(c)
     await w(resp, j)
+
+
+async def web_config(req, resp, **kwargs):
+    await mypicoweb.start_response(resp)
+    c = get_config()
+    print(c)
+
+    h = ''
+
+    def r(input_text):
+        input_text = {True: "1", False: "0"}.get(input_text, input_text)
+        return input_text.replace('_', ' ').capitalize()
+    for k, v in c.items():
+        if str(v).lower() in ('true', 'false'):
+            h += '<input type="hidden" value="0" name="{}">'.format(k)
+            h += '<p style="color:white;">{}: <input type="checkbox" value="1" name="{}" {}></p>'.format(r(k), k, 'checked' if v else '')
+        else:
+            h += '<p style="color:white;">{}: <input type="text" name="{}" value="{}"></input><br></p>'.format(r(k), k, v)
+
+    await w(resp, '''<html>
+    <body style="background-color:black;">
+    <form action="/save_config">
+    {}
+    <input type="submit" value="Save">
+    <input type="button" onclick="window.location.href='/';" value=Back />
+    </form>
+    </body>
+    </html>'''.format(h))

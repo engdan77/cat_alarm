@@ -19,7 +19,7 @@ from mywatchdog import WDT
 from myled import blink_int
 from mywifi import MyWifi
 from webresources import web_status, web_index, web_honk, web_change_state
-from webresources import web_reboot, web_get_config, web_save_config, web_repl
+from webresources import web_reboot, web_config, web_get_config, web_save_config, web_repl
 from mycatalarm import MyCatAlarm
 import webrepl
 
@@ -35,7 +35,8 @@ DEFAULT_CONFIG = {'ssid': 'MYWIFI',
                   'mqtt_username': 'username',
                   'mqtt_password': 'password',
                   'enable': False,
-                  'hours': '9-15'}
+                  'hours': '9-15',
+                  'honk_length_ms': 1500}
 
 
 def global_exception_handler(loop, context):
@@ -69,6 +70,7 @@ def start_cat_alarm(config):
     app.add_url_rule('/get_config', web_get_config)
     app.add_url_rule('/save_config', web_save_config)
     app.add_url_rule('/webrepl', web_repl)
+    app.add_url_rule('/config', web_config)
 
     gc.collect()
     app.run(host="0.0.0.0", port=80, log=log, debug=True)

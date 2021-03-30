@@ -105,6 +105,7 @@ class MyCatAlarm:
                 self.wdt.feed()
 
     async def honk(self, honk_time=1500, idle_time=20):
+        honk_time = int(self.config.get('honk_length_ms', honk_time))
         self.relay.value(True)
         print("honk started")
         await asyncio.sleep_ms(honk_time)
